@@ -1,0 +1,498 @@
+#1
+
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+image = cv2.imread("chessboard.jpg")
+
+gray_image = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+
+edges_image = cv2.Canny(image,50,150)
+
+scaled_image = image[150:400,150:400]
+
+resize_image = cv2.resize(image,(200,200))
+
+blurr_image = cv2.GaussianBlur(image,(5,5),0)
+
+_,binary_image = cv2.threshold(gray_image,178,255,cv2.THRESH_BINARY)
+
+plt.imshow(gray_image)
+plt.show()
+plt.imshow(edges_image)
+plt.show()
+plt.imshow(scaled_image)
+plt.show()
+plt.imshow(resize_image)
+plt.show()
+plt.imshow(blurr_image)
+plt.show()
+plt.imshow(binary_image)
+plt.show()
+
+
+#2
+
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+image = cv2.imread('water_coins.jpg')
+# Load image
+gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+# Apply threshold
+ret, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+
+
+# Noise removal
+kernel = np.ones((3,3), np.uint8)
+# opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=2)
+
+# Sure background area
+sure_bg = cv2.dilate(thresh, kernel, iterations=3)
+
+# Sure foreground area
+dist_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 5)
+ret, sure_fg = cv2.threshold(dist_transform, 0.7*dist_transform.max(), 255, 0)
+
+
+# Markers
+sure_fg = np.uint8(sure_fg)
+ret, markers = cv2.connectedComponents(sure_fg)
+
+
+# Apply watershed
+markers = cv2.watershed(image, markers)
+image[markers == -1] = [255, 0, 0]
+
+plt.imshow(image)
+plt.axis('off')
+plt.show()
+
+
+
+#3
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
+
+# Load the image
+image_path = 'chessboard.jpg'
+image = cv2.imread(image_path)
+image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+# Display the original image
+plt.figure(figsize=(8, 6))
+plt.title('Original Image')
+plt.imshow(image_rgb)
+plt.axis('off')
+plt.show()
+
+# Get image dimensions
+rows, cols = image.shape[:2]
+
+# 1. Translation
+# Define the translation matrix: [1, 0, tx; 0, 1, ty]
+tx, ty = 50, 100  # Translate by 50 pixels right and 100 pixels down
+translation_matrix = np.float32([[1, 0, tx], [0, 1, ty]])
+translated_image = cv2.warpAffine(image, translation_matrix, (cols, rows))
+
+# Display the translated image
+plt.figure(figsize=(8, 6))
+plt.title('Translated Image')
+plt.imshow(cv2.cvtColor(translated_image, cv2.COLOR_BGR2RGB))
+plt.axis('off')
+plt.show()
+
+# 2. Rotation
+# Define the rotation matrix using cv2.getRotationMatrix2D(center, angle, scale)
+angle = 45  # Rotate by 45 degrees
+scale = 1.0  # Keep the original scale
+center = (cols // 2, rows // 2)  # Center of rotation
+rotation_matrix = cv2.getRotationMatrix2D(center, angle, scale)
+rotated_image = cv2.warpAffine(image, rotation_matrix, (cols, rows))
+
+# Display the rotated image
+plt.figure(figsize=(8, 6))
+plt.title('Rotated Image (45 degrees)')
+plt.imshow(cv2.cvtColor(rotated_image, cv2.COLOR_BGR2RGB))
+plt.axis('off')
+plt.show()
+
+# 3. Scaling
+# Use cv2.resize for scaling
+scale_x, scale_y = 1.5, 1.5  # Scale factors for x and y
+scaled_image = cv2.resize(image, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
+
+# Display the scaled image
+plt.figure(figsize=(8, 6))
+plt.title('Scaled Image (1.5x)')
+plt.imshow(cv2.cvtColor(scaled_image, cv2.COLOR_BGR2RGB))
+plt.axis('off')
+plt.show()
+
+
+# 4. Combined Transformation (Translation + Rotation + Scaling)
+# Translate, then rotate, and then scale
+combined_matrix = cv2.warpAffine(rotated_image, translation_matrix, (cols, rows))
+combined_scaled = cv2.resize(combined_matrix, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
+
+# Display the combined transformation result
+plt.figure(figsize=(8, 6))
+plt.title('Combined Transformation (Translation + Rotation + Scaling)')
+plt.imshow(cv2.cvtColor(combined_scaled, cv2.COLOR_BGR2RGB))
+plt.axis('off')
+plt.show()
+#4
+import cv2
+import numpy as np
+
+# Step 1: Load the image
+image = cv2.imread('chessboard.jpg')
+
+# Define points in the original image (source points)
+# These are typically corners of an object you want to transform
+pts_src = np.array([[100, 150], [200, 150], [200, 250], [100, 250]], dtype='float32')
+
+# Define points in the transformed image (destination points)
+# This could be the location where you want the corners to map
+pts_dst = np.array([[50, 100], [250, 100], [250, 300], [50, 300]], dtype='float32')
+
+# Step 2: Compute the homography matrix
+homography_matrix, status = cv2.findHomography(pts_src, pts_dst)
+
+# Step 3: Print the homography matrix
+print("Homography Matrix:\n", homography_matrix)
+
+# Step 4: Use the homography matrix to warp the image (optional)
+height, width = image.shape[:2]
+warped_image = cv2.warpPerspective(image, homography_matrix, (width, height))
+
+# Step 5: Display the results
+cv2.imshow('Original Image', image)
+cv2.imshow('Warped Image', warped_image)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+
+#5
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
+
+# Load the image
+image_path = 'chessboard.jpg'
+image = cv2.imread(image_path)
+image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+# Display the original image
+plt.figure(figsize=(8, 6))
+plt.title('Original Image')
+plt.imshow(image_rgb)
+plt.axis('off')
+plt.show()
+
+# Define points for perspective transformation
+# Specify the coordinates of four corners of the original image
+rows, cols = image.shape[:2]
+original_points = np.float32([
+    [0, 0],                  # Top-left
+    [cols - 1, 0],           # Top-right
+    [cols - 1, rows - 1],    # Bottom-right
+    [0, rows - 1]            # Bottom-left
+])
+
+# Define points for the desired perspective
+# Warp the corners to make the image appear tilted
+warped_points = np.float32([
+    [50, 100],               # New top-left
+    [cols - 100, 50],        # New top-right
+    [cols - 50, rows - 50],  # New bottom-right
+    [100, rows - 100]        # New bottom-left
+])
+
+# Compute the perspective transformation matrix
+perspective_matrix = cv2.getPerspectiveTransform(original_points, warped_points)
+
+# Apply the perspective warp
+warped_image = cv2.warpPerspective(image, perspective_matrix, (cols, rows))
+
+# Display the transformed image
+plt.figure(figsize=(8, 6))
+plt.title('Transformed Image (Viewed from a Different Angle)')
+plt.imshow(cv2.cvtColor(warped_image, cv2.COLOR_BGR2RGB))
+plt.axis('off')
+plt.show()
+
+
+
+#6
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Read the image
+img = cv2.imread('c1.jpg')
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+# Try to find the chessboard size (rows, columns)
+
+found = False
+for rows in range(3, 20):  # Try different values for rows
+    for cols in range(3, 20):  # Try different values for columns
+        ret, corners = cv2.findChessboardCorners(gray, (cols, rows), None)
+        if ret:
+            objp = np.zeros((cols * rows, 3), np.float32)
+            objp[:, :2] = np.mgrid[0:cols, 0:rows].T.reshape(-1, 2)
+            objpoints = [objp]
+            imgpoints = [corners]
+            cv2.drawChessboardCorners(img, (cols, rows), corners, ret)
+            found = True
+            break
+    if found:
+        break
+
+# If chessboard corners were found, calibrate the camera
+if found:
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    plt.title("Chessboard Corners Detected")
+    plt.axis('off')
+    plt.show()
+
+    # Calibrate the camera
+    ret, matrix, distortion, r_vecs, t_vecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+    print("Camera matrix:", matrix)
+    print("Distortion coefficients:", distortion)
+    print("Rotation vectors:", r_vecs)
+    print("Translation vectors:", t_vecs)
+else:
+    print("Chessboard corners not found in the image.")
+    
+    
+#7
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+img1, img2 = cv2.imread('chessboard.jpg', 0), cv2.imread('chessboard.jpg', 0)
+kp1, des1 = cv2.ORB_create().detectAndCompute(img1, None)
+kp2, des2 = cv2.ORB_create().detectAndCompute(img2, None)
+matches = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True).match(des1, des2)
+pts1, pts2 = np.float32([kp1[m.queryIdx].pt for m in matches]), np.float32([kp2[m.trainIdx].pt for m in matches])
+F, _ = cv2.findFundamentalMat(pts1, pts2, cv2.FM_RANSAC)
+
+print("Fundamental Matrix:\n", F)
+plt.imshow(cv2.cvtColor(cv2.drawMatches(img1, kp1, img2, kp2, matches[:10], None), cv2.COLOR_BGR2RGB))
+
+
+#8
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
+
+# Load image and convert to grayscale
+image = cv2.imread('chessboard.jpg')
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+# Canny Edge Detection
+edges = cv2.Canny(gray, 50, 150)
+
+# Hough Line Transform
+lines = cv2.HoughLines(edges, 1, np.pi / 180, 100)
+for rho, theta in lines[:, 0]:
+    a, b = np.cos(theta), np.sin(theta)
+    x0, y0 = a * rho, b * rho
+    cv2.line(image, (int(x0 + 1000 * (-b)), int(y0 + 1000 * a)),
+             (int(x0 - 1000 * (-b)), int(y0 - 1000 * a)), (0, 255, 0), 2)
+
+# Harris Corner Detection
+harris = cv2.cornerHarris(np.float32(gray), 2, 3, 0.04)
+image[harris > 0.01 * harris.max()] = [0, 0, 255]
+
+# Display results
+plt.subplot(131), plt.imshow(edges, cmap='gray'), plt.title('Canny Edges'), plt.axis('off')
+plt.subplot(132), plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)), plt.title('Hough + Corners'), plt.axis('off')
+plt.tight_layout(), plt.show()
+
+#9
+import cv2
+import matplotlib.pyplot as plt
+
+# Load the image in grayscale
+img1 = cv2.imread('water_coins.jpg', 0)
+
+# Create SIFT detector object
+sift = cv2.SIFT_create()
+
+# Detect keypoints and compute descriptors
+kp, des = sift.detectAndCompute(img1, None)
+
+# Draw keypoints on the image
+img_with_kp = cv2.drawKeypoints(img1, kp, None)
+
+# Display the image with keypoints using matplotlib
+plt.imshow(cv2.cvtColor(img_with_kp, cv2.COLOR_BGR2RGB))  # Convert to RGB for matplotlib
+plt.title('SIFT Keypoints')
+plt.axis('off')  # Hide axes for cleaner display
+plt.show()
+#10
+import cv2
+from skimage.feature import hog
+import matplotlib.pyplot as plt
+
+# Load the grayscale image
+image = cv2.imread('water_coins.jpg', cv2.IMREAD_GRAYSCALE)
+
+# ORB Feature Extraction
+orb = cv2.ORB_create()
+keypoints_orb, _ = orb.detectAndCompute(image, None)
+image_orb = cv2.drawKeypoints(image, keypoints_orb, None, (255, 0, 0), flags=0)
+
+# HOG Feature Extraction
+_, hog_image = hog(image, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), visualize=True)
+hog_image = (hog_image * 255).astype("uint8")
+
+# Visualization
+plt.subplot(1, 2, 1), plt.imshow(image_orb, cmap='gray'), plt.title("ORB Keypoints")
+plt.subplot(1, 2, 2), plt.imshow(hog_image, cmap='gray'), plt.title("HOG Visualization")
+plt.show()
+
+#11
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
+
+
+# Load the segmented image (binary)
+image = cv2.imread('water_coins.jpg', cv2.IMREAD_GRAYSCALE)
+
+# Threshold the image (if not already binary)
+_, binary_image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+
+# Find connected components
+num_labels, labels = cv2.connectedComponents(binary_image)
+
+# Display the original image with region labels
+plt.imshow(labels, cmap='jet')
+plt.title(f'Number of Regions: {num_labels - 1}')  # Subtract 1 for the background
+plt.axis('off')
+plt.show()
+#12
+import cv2
+import matplotlib.pyplot as plt
+
+# Load image
+img = cv2.imread('images.jpg')
+
+# Convert to different color spaces
+img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+img_ycbcr = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
+
+# Split LAB and YCbCr for better visualization
+l, a, b = cv2.split(img_lab)
+y, cb, cr = cv2.split(img_ycbcr)
+
+# Display
+plt.figure(figsize=(10, 10))
+plt.subplot(3, 3, 1), plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.title('RGB'), plt.axis('off')
+plt.subplot(3, 3, 2), plt.imshow(img_hsv), plt.title('HSV'), plt.axis('off')
+plt.subplot(3, 3, 3), plt.imshow(l, cmap='gray'), plt.title('LAB - L'), plt.axis('off')
+plt.subplot(3, 3, 4), plt.imshow(a, cmap='coolwarm'), plt.title('LAB - A'), plt.axis('off')
+plt.subplot(3, 3, 5), plt.imshow(b, cmap='coolwarm'), plt.title('LAB - B'), plt.axis('off')
+plt.subplot(3, 3, 6), plt.imshow(y, cmap='gray'), plt.title('YCbCr - Y'), plt.axis('off')
+plt.subplot(3, 3, 7), plt.imshow(cb, cmap='coolwarm'), plt.title('YCbCr - Cb'), plt.axis('off')
+plt.subplot(3, 3, 8), plt.imshow(cr, cmap='coolwarm'), plt.title('YCbCr - Cr'), plt.axis('off')
+
+plt.tight_layout()
+plt.show()
+#13
+import cv2
+import matplotlib.pyplot as plt
+
+# Load image
+img = cv2.imread('images.jpg')
+
+# Apply Gaussian filter to reduce noise
+img_filtered = cv2.GaussianBlur(img, (5, 5), 0)
+
+# Display original and filtered images side by side
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1), plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.title('Original Image'), plt.axis('off')
+plt.subplot(1, 2, 2), plt.imshow(cv2.cvtColor(img_filtered, cv2.COLOR_BGR2RGB)), plt.title('Filtered Image'), plt.axis('off')
+
+plt.tight_layout()
+plt.show()
+
+
+#14
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load the original image
+img = cv2.imread('house.jpg')
+
+# Split the image into two overlapping halves
+height, width = img.shape[:2]
+img1 = img[:, :int(width * 0.7)]  # Left part (70% of the width)
+img2 = img[:, int(width * 0.3):]  # Right part (30% of the width)
+
+# Initialize ORB detector
+orb = cv2.ORB_create()
+
+# Detect keypoints and descriptors
+kp1, des1 = orb.detectAndCompute(img1, None)
+kp2, des2 = orb.detectAndCompute(img2, None)
+
+# Match descriptors using Brute Force Matcher
+bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+matches = bf.match(des1, des2)
+
+# Sort matches by distance (best matches first)
+matches = sorted(matches, key=lambda x: x.distance)
+
+# Extract matched points
+pts1 = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
+pts2 = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
+
+# Find homography to align the second image with the first
+M, _ = cv2.findHomography(pts2, pts1, cv2.RANSAC, 5.0)
+
+# Warp the second image (right part)
+img2_warped = cv2.warpPerspective(img2, M, (img1.shape[1] + img2.shape[1], img1.shape[0]))
+
+# Place the first image in the final panorama
+panorama = img2_warped
+panorama[0:img1.shape[0], 0:img1.shape[1]] = img1
+
+# Display the images
+plt.figure(figsize=(15, 5))
+
+# Display the left image
+plt.subplot(1, 3, 1)
+plt.imshow(cv2.cvtColor(img1, cv2.COLOR_BGR2RGB))
+plt.title('Left Image')
+plt.axis('off')
+
+# Display the right image
+plt.subplot(1, 3, 2)
+plt.imshow(cv2.cvtColor(img2, cv2.COLOR_BGR2RGB))
+plt.title('Right Image')
+plt.axis('off')
+
+# Display the stitched panorama
+plt.subplot(1, 3, 3)
+plt.imshow(cv2.cvtColor(panorama, cv2.COLOR_BGR2RGB))
+plt.title('Stitched Panorama')
+plt.axis('off')
+
+# Adjust layout
+plt.tight_layout()
+plt.show()
+
+
+
+
